@@ -1,0 +1,350 @@
+*&---------------------------------------------------------------------*
+*& Report ZTEST_PORTFOLIO_ALV
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZTEST_ALV_PORTFOLIO.
+
+
+TABLES: SCARR, SPFLI, SBOOK.
+
+TYPE-POOLS: slis.                             "ALV Declarations
+
+*Data Declaration
+*----------------
+TYPES: BEGIN OF t_sbook,
+  CARRID TYPE sbook-carrid,
+  CONNID TYPE sbook-connid,
+  LOCCURAM TYPE sbook-loccuram,
+  LOCCURKEY TYPE sbook-loccurkey,
+  LUGGWEIGHT TYPE sbook-luggweight,
+  FORCURAM TYPE sbook-forcuram,
+END OF t_sbook.
+
+DATA: it_sbook TYPE STANDARD TABLE OF t_sbook INITIAL SIZE 0,
+*DATA: it_sbook TYPE SORTED TABLE OF t_sbook WITH NON-UNIQUE KEY CARRID CONNID,
+      wa_sbook TYPE t_sbook.
+
+DATA: it_collect TYPE STANDARD TABLE OF t_sbook INITIAL SIZE 0,
+      wa_collect TYPE t_sbook.
+
+
+*ALV data declarations
+DATA: fieldcatalog TYPE slis_t_fieldcat_alv WITH HEADER LINE,
+      gd_tab_group TYPE slis_t_sp_group_alv,
+      gd_layout    TYPE slis_layout_alv,
+      gd_repid     LIKE sy-repid.
+
+TYPES: BEGIN OF t_move,
+  CARRID TYPE sbook-carrid,
+  CONNID TYPE sbook-connid,
+  LOCCURAM TYPE sbook-loccuram,
+  LOCCURKEY TYPE sbook-loccurkey,
+  LUGGWEIGHT TYPE sbook-luggweight,
+  FORCURAM TYPE sbook-forcuram,
+  CARRNAME TYPE scarr-carrname,
+  URL TYPE scarr-url,
+  CITYFROM TYPE spfli-cityfrom,
+  CITYTO TYPE spfli-cityto,
+  DEPTIME TYPE spfli-deptime,
+  ARRTIME TYPE spfli-arrtime,
+
+  END OF t_move.
+
+
+DATA: it_move TYPE STANDARD TABLE OF t_move INITIAL SIZE 0,
+      wa_move TYPE t_move.
+
+TYPES: BEGIN OF t_scarr,
+  CARRID TYPE scarr-carrid,
+  CARRNAME TYPE scarr-carrname,
+  URL TYPE scarr-url,
+
+  END OF t_scarr.
+
+DATA: it_scarr TYPE STANDARD TABLE OF t_scarr INITIAL SIZE 0,
+      wa_scarr TYPE t_scarr.
+
+TYPES: BEGIN OF t_spfli,
+  CARRID TYPE spfli-carrid,
+  CONNID TYPE spfli-connid,
+  CITYFROM TYPE spfli-cityfrom,
+  CITYTO TYPE spfli-cityto,
+  DEPTIME TYPE spfli-deptime,
+  ARRTIME TYPE spfli-arrtime,
+
+  END OF t_spfli.
+
+DATA: it_spfli TYPE STANDARD TABLE OF t_spfli INITIAL SIZE 0,
+      wa_spfli TYPE t_spfli.
+
+
+DATA : t TYPE slis_t_sp_group_alv .
+
+*조회 화면은 변수를 선언해준다
+SELECTION-SCREEN BEGIN OF BLOCK part1 WITH FRAME TITLE text-001.
+SELECT-OPTIONS s_carrid FOR sbook-carrid.
+SELECTION-SCREEN SKIP.
+SELECT-OPTIONS s_connid FOR sbook-connid.
+SELECTION-SCREEN SKIP.
+SELECT-OPTIONS s_lkey FOR sbook-loccurkey.
+SELECTION-SCREEN END OF BLOCK part1.
+
+INITIALIZATION.
+
+*-----------------------------------------------
+*MULTI SELECTION DEFAULT
+*s_carrid-sign   = 'I'.
+*s_carrid-OPTION = 'EQ'.
+*s_carrid-low    = 'AA'.
+*s_carrid-HIGH   = ''.
+*APPEND s_carrid TO s_carrid.
+*CLEAR  s_carrid.
+*
+*s_carrid-sign   = 'I'.
+*s_carrid-OPTION = 'EQ'.
+*s_carrid-low    = 'AB'.
+*s_carrid-HIGH   = ''.
+*APPEND s_carrid TO s_carrid.
+*CLEAR  s_carrid.
+*
+*s_carrid-sign   = 'I'.
+*s_carrid-OPTION = 'BT'.
+*s_carrid-low    = 'AC'.
+*s_carrid-HIGH   = 'LH'.
+*APPEND s_carrid TO s_carrid.
+*CLEAR  s_carrid.
+*
+*s_carrid-sign   = 'E'.
+*s_carrid-OPTION = 'EQ'.
+*s_carrid-low    = 'LH'.
+*s_carrid-HIGH   = ''.
+*APPEND s_carrid TO s_carrid.
+*CLEAR  s_carrid.
+*
+*s_carrid-sign   = 'E'.
+*s_carrid-OPTION = 'BT'.
+*s_carrid-low    = 'AF'.
+*s_carrid-HIGH   = 'AZ'.
+*APPEND s_carrid TO s_carrid.
+*CLEAR  s_carrid.
+
+
+*------------------------------------------------
+*CARRNAME 도움말
+
+
+
+
+
+
+************************************************************************
+*Start-of-selection.
+START-OF-SELECTION.
+
+  PERFORM data_retrieval.
+  PERFORM build_fieldcatalog.
+  PERFORM build_layout.
+  PERFORM display_alv_report.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  BUILD_FIELDCATALOG
+*&---------------------------------------------------------------------*
+*       Build Fieldcatalog for ALV Report
+*----------------------------------------------------------------------*
+FORM build_fieldcatalog.
+
+  fieldcatalog-fieldname   = 'carrid'.
+  fieldcatalog-seltext_m   = 'CARRID'.
+  fieldcatalog-col_pos     = 0.
+  fieldcatalog-outputlen   = 10.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'connid'.
+  fieldcatalog-seltext_m   = 'CONNID'.
+  fieldcatalog-col_pos     = 1.
+  fieldcatalog-datatype    = 'numc'.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'loccuram'.
+  fieldcatalog-seltext_m   = 'LOCCURAM'.
+  fieldcatalog-col_pos     = 2.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'loccurkey'.
+  fieldcatalog-seltext_m   = 'LOCUURKEY'.
+  fieldcatalog-col_pos     = 3.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'luggweight'.
+  fieldcatalog-seltext_m   = 'LUGGWEIGHT'.
+  fieldcatalog-col_pos     = 4.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'forcuram'.
+  fieldcatalog-seltext_m   = 'FORCURAM'.
+  fieldcatalog-col_pos     = 5.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'carrname'.
+  fieldcatalog-seltext_m   = 'CARRNAME'.
+  fieldcatalog-col_pos     = 6.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'url'.
+  fieldcatalog-seltext_m   = 'URL'.
+  fieldcatalog-col_pos     = 7.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'cityfrom'.
+  fieldcatalog-seltext_m   = 'CITYFROM'.
+  fieldcatalog-col_pos     = 8.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'cityto'.
+  fieldcatalog-seltext_m   = 'CITYTO'.
+  fieldcatalog-col_pos     = 9.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'deptime'.
+  fieldcatalog-seltext_m   = 'DEPTIME'.
+  fieldcatalog-col_pos     = 10.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+  fieldcatalog-fieldname   = 'arrtime'.
+  fieldcatalog-seltext_m   = 'ARRTIME'.
+  fieldcatalog-col_pos     = 11.
+  APPEND fieldcatalog TO fieldcatalog.
+  CLEAR  fieldcatalog.
+
+ENDFORM.                    " BUILD_FIELDCATALOG
+
+
+*&---------------------------------------------------------------------*
+*&      Form  BUILD_LAYOUT
+*&---------------------------------------------------------------------*
+*       Build layout for ALV grid report
+*----------------------------------------------------------------------*
+FORM build_layout.
+
+  gd_layout-no_input          = 'X'.
+  gd_layout-colwidth_optimize = 'X'.
+  gd_layout-zebra = 'X'.
+*  gd_layout-info_fieldname =      'LINE_COLOR'.
+*  gd_layout-def_status = 'A'.
+
+ENDFORM.                    " BUILD_LAYOUT
+
+
+*&---------------------------------------------------------------------*
+*&      Form  DISPLAY_ALV_REPORT
+*&---------------------------------------------------------------------*
+*       Display report using ALV grid
+*----------------------------------------------------------------------*
+FORM display_alv_report.
+  gd_repid = sy-repid.
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program = gd_repid
+      is_layout          = gd_layout
+      it_fieldcat        = fieldcatalog[]
+      i_save             = 'X'
+    TABLES
+      t_outtab           = it_move
+    EXCEPTIONS
+      program_error      = 1
+      OTHERS             = 2.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*         WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+ENDFORM.                    " DISPLAY_ALV_REPORT
+
+
+*&---------------------------------------------------------------------*
+*&      Form  DATA_RETRIEVAL
+*&---------------------------------------------------------------------*
+*       Retrieve data form EKPO table and populate itab it_ekko
+*----------------------------------------------------------------------*
+FORM data_retrieval.
+  DATA: ld_color(1) TYPE c.
+
+  SELECT carrid connid loccuram loccurkey luggweight forcuram
+
+*  UP TO 10 ROWS
+    FROM sbook
+    INTO TABLE it_sbook
+    WHERE carrid in s_carrid
+      and connid in s_connid
+      and loccurkey in s_lkey.
+
+
+
+
+   sort it_sbook by carrid connid.
+*  sort it_sbook by carrid connid ascending.
+*  sort it_sbook by carrid connid descending.
+*  sort it_sbook by carrid descending connid descending.
+
+     LOOP at it_sbook into wa_sbook.
+    collect wa_sbook into it_collect.
+    ENDLOOP.
+
+    select carrid carrname url
+    from scarr
+    into table it_scarr
+    where carrid in s_carrid.
+
+
+    select carrid connid cityfrom cityto deptime arrtime
+    from spfli
+    into table it_spfli
+    where carrid in s_carrid
+      and connid in s_connid.
+
+
+
+    LOOP at it_collect into wa_collect.
+    clear wa_move.
+    clear wa_scarr.
+    clear wa_spfli.
+    move-corresponding wa_collect to wa_move.
+
+    read table it_scarr into wa_scarr with key carrid = wa_move-carrid.
+
+    IF sy-subrc = 0.
+      wa_move-carrname = wa_scarr-carrname.
+      wa_move-url = wa_scarr-url.
+
+    ENDIF.
+
+    read table it_spfli into wa_spfli with key carrid = wa_move-carrid
+                                                connid = wa_move-connid.
+
+    IF sy-subrc = 0.
+      wa_move-cityfrom = wa_spfli-cityfrom.
+      wa_move-cityto = wa_spfli-cityto.
+      wa_move-deptime = wa_spfli-deptime.
+      wa_move-arrtime = wa_spfli-arrtime.
+
+    ENDIF.
+    APPEND wa_move TO it_move.
+    ENDLOOP.
+
+
+
+ENDFORM.                    " DATA_RETRIEVAL
